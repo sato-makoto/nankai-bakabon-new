@@ -1,0 +1,758 @@
+
+/* ===================
+     <<nanba160.c>>
+
+     for UNIX(gcc)  modified by T.AIBA 1996/02/15
+   =================== */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+
+#include "jstring.c"
+#include <time.h>
+
+#define WORDS_MAX 2500
+#define KUTOTEN_LEN 41
+#define KUGIRI " !?:;.,^~_/<>()[]{}\'\"\t\n¡¡¡ª¡©¡§¡¨¡¥¡¤¡£¡¢¡¦\
+¡Ä¡Å¡°¡±¡²¡¿¡ã¡ä¡Ê¡Ë¡Î¡Ï¡Ö¡×¡Ì¡Í¡Ð¡Ñ¡Ò¡Ó¡Ô¡Õ¡Ø¡Ù¡Ú¡Û¡È¡É¡Æ¡Ç"
+
+void title_a();
+void title_b();
+void usage();
+void stop(char *p);
+void prt(char *p,char _dtype);
+void cprt(char *p,char _dtype);
+double rand1();
+int rand100();
+int set_val(int a,int l,int h);
+char *strtail(char *p,int n);
+char *get_strval(char *p);
+char *jstrrem(char *s,char *t);
+void open_infile();
+void open_outfile();
+void read_data();
+int get_opt1(int n,char **p);
+void get_opt2();
+void sel(int wtype);
+void inflect();
+
+
+/*  ÆâÄêÃÍ  */
+int mn=1;		/*  °ìÊ¸¤ÎÄ¹¤µ(ºÇ¾®)  */
+int mx=5;		/*  °ìÊ¸¤ÎÄ¹¤µ(ºÇÂç)  */
+int sn=6;		/*  °ìÃÊÍî¤¢¤¿¤ê¤ÎÊ¸¤Î¸Ä¿ô(1-32000)  */
+int rc=2;		/*  Æ±°ì¸ì¶ç¤Î½ÅÊ£¥Á¥§¥Ã¥¯¤ò¤É¤ÎÄøÅÙ¤¹¤ë¤«(0-10)  */
+int sc=60;		/*  ¼ç¸ì¤ò¾ÊÎ¬¤¹¤ë³ä¹ç(0-100)  */
+int sh=70;		/*  Éû»ì¶ç¤ò¾ÊÎ¬¤¹¤ë³ä¹ç(0-100)  */
+int jt=50;		/*  Á´½Ò¸ì¤Î¤¦¤ÁÂ¾Æ°»ì¶ç¤Î³ä¹ç(0-100)  */
+int sz=50;		/*  ÀÜÂ³¶ç¤ÇÊ¸¤ÈÊ¸¤òÀÜÂ³¤¹¤ë³ä¹ç(0-100)  */
+int bm=50;		/*  Ê¸Ëö¶ç¤ÇÊ¸¤ò½ª¤ï¤é¤»¤ë³ä¹ç(0-100)  */
+char kuten[KUTOTEN_LEN]="¡£";	/*  ¶çÅÀ  */
+char toten[KUTOTEN_LEN]="¡¢";	/*  ÆÉÅÀ  */
+int c_outs=0;	/* ½ÐÎÏ¤¹¤ëÃÊÍî¿ô(0=Ìµ¸Â,or 1-32000) */
+
+char *w[WORDS_MAX],buf[256],tmp[256];
+char sz_b[5]; /* ÀÜÂ³½õ»ì¤Î½ÅÊ£¥Á¥§¥Ã¥¯ÍÑ */
+char jt_b[3][5],bm_b[5]; /* Ê¸Ëö¶ç¤Î½Ò¸ì¸ìÈø¤Î½ÅÊ£¥Á¥§¥Ã¥¯ÍÑ */
+char infile[81]="",outfile[81]="";
+unsigned char count[WORDS_MAX];
+int wlow[8],whigh[8],wnum[8],wcheck[8],wmax;
+
+char dtype; /* Ê¸»úÎó½ÐÎÏÀè(0=console,1=disk,2=console&disk) */
+char nf=0; /* ²èÌÌÉ½¼¨ÍÑ */
+char chkfo=0; /* ¥Õ¥¡¥¤¥ë½ÐÎÏÍÑ */
+char chkinf=0,chkoutf=0; /* ¥ª¥×¥·¥ç¥ó»ØÄêÍÑ */
+
+FILE *fp;
+
+
+
+main(int argc,char **argv)
+{
+	int a,slen,st;
+	int chp=0; /* ÃÊÍîÊ¬¤±ÍÑ */
+
+	srand((unsigned)time(NULL));
+	/*
+	printf("\33[2J");
+	*/
+	dtype=0;
+	/*
+	title_a();
+	*/
+
+	if(argc>1){get_opt1(argc,argv);}
+
+	open_infile();
+	read_data();
+	if(chkfo==0){
+		open_outfile();
+		dtype=1;
+		/*
+		title_b();
+		prt("¼­½ñ¥Õ¥¡¥¤¥ëÌ¾:",dtype); prt(infile,dtype); prt("\n\n",dtype);
+		*/
+	}
+
+	if(nf==0 && chkfo==0) dtype=2;
+
+mainloop:
+
+	slen=abs(mn+rand1()*(mx-mn+1));  /* °ìÊ¸¤ÎÄ¹¤µ */
+	if(slen<1)slen=1;
+	st=1;  /* 'Ê¸¤ÎÀèÆ¬'¤ò¼¨¤¹ */
+
+	for(a=1;a<=slen;a++){
+
+	/*  Éû»ì¶ç¤½¤Î£±  */
+		if(rand100()>sh){
+			sel(2);
+			cprt(tmp,dtype);
+		}
+
+	/*  ¼ç¸ì¤È½õ»ì  */
+		if(rand100()>sc || st==1){
+			st=0;
+			sel(0);
+			cprt(tmp,dtype);
+			sel(1);
+			cprt(tmp,dtype);
+		}
+
+	/*  Éû»ì¶ç¤½¤Î£²  */
+		if(rand100()>sh){
+			sel(2);
+			cprt(tmp,dtype);
+		}
+	
+	/*  ½Ò¸ìÀá  */
+		if(rand100()<jt) sel(3); /* ¼«Æ°»ì */
+		else{
+			sel(0); /* ÌÜÅª¸ì */
+			cprt(tmp,dtype);
+			sel(4); /* Â¾Æ°»ì */
+		}
+	
+	/*  Ê¸¤ÎÀÜÂ³¤Þ¤¿¤ÏÊ¸Ëö½èÍý  */
+		if(a<slen){
+			if(rand100()<sz){
+				cprt(tmp,dtype);
+				sel(5);  /* ÀÜÂ³¶ç */
+				cprt(tmp,dtype);
+			}
+			else{
+				inflect(); /* ¸ì·ÁÊÑ²½ */
+				cprt(tmp,dtype);
+			}
+		}
+		else {
+			cprt(tmp,dtype);
+			if(rand100()<bm){
+				sel(6); /* Ê¸Ëö¶ç */
+				cprt(tmp,dtype);
+			}
+			cprt(kuten,dtype); /* ¶çÅÀ */
+		}
+	
+	}
+
+	/*  ÃÊÍîÊ¬¤±  */
+	chp++;
+	if(chp==sn){
+		prt("\n\n",dtype);
+		chp=0;
+		if(nf==1) printf(".");
+
+		if(c_outs!=0){
+			c_outs--;
+			if(c_outs<=0){goto end_of_main;}
+		}
+	}
+
+	if(rc!=0){
+		for(a=0;a<=wmax;a++){
+			if(count[a]>0) count[a]--;
+		}
+	}
+
+	/*
+	if(kbhit()==0)
+	*/
+	  goto mainloop;
+
+	/*
+	getch();
+	*/
+	end_of_main:
+		prt("\n\n",dtype);
+	        /*
+		fcloseall();
+		*/
+		exit(0);
+}
+
+
+void title_a(){
+	int a;
+	for(a=1;a<=23;a++) prt("¡Á",dtype);
+	prt("\n",dtype);
+	prt("¡¡¡¡¼«Æ°ºîÊ¸¥½¥Õ¥È¡ØÆñ²ò¥Ð¥«¥Ü¥ó¡ÙVer.1.60    \n",dtype);
+	for(a=1;a<=23;a++) prt("¡Á",dtype);
+	prt("\n",dtype);
+}
+
+void title_b(){
+	int a;
+	time_t tm;
+	time(&tm);
+	for(a=1;a<=37;a++) prt("¡Á",dtype);
+	prt("\n",dtype);
+	prt("¡¡¡¡¼«Æ°ºîÊ¸¥½¥Õ¥È¡ØÆñ²ò¥Ð¥«¥Ü¥ó¡ÙVer.1.60    ",dtype);
+	prt(ctime(&tm),dtype);
+	for(a=1;a<=37;a++) prt("¡Á",dtype);
+	prt("\n",dtype);
+}
+
+
+void usage(){
+	printf("command option:\n"
+		" -i[filename]  ¼­½ñ¥Õ¥¡¥¤¥ë¤Î»ØÄê     -n  ²èÌÌÉ½¼¨¤òÍÞÀ©\n"
+		" -o[filename]  ½ÐÎÏ¥Õ¥¡¥¤¥ë¤Î»ØÄê     -v  ¥Õ¥¡¥¤¥ë½ÐÎÏ¤·¤Ê¤¤\n"
+		" -s[1-32000]   ½ÐÎÏ¤¹¤ëÃÊÍî¿ô\n\n");
+	printf("data option:\n"
+		" -MN[1-100]    °ìÊ¸¤ÎÄ¹¤µ(ºÇ¾®)       -JT[0-100]   Â¾Æ°»ì¤Î³ä¹ç\n"
+		" -MX[1-100]    °ìÊ¸¤ÎÄ¹¤µ(ºÇÂç)       -SZ[0-100]   ÀÜÂ³¶ç¤Î³ä¹ç\n"
+		" -SN[1-32000]  °ìÃÊÍî¤ÎÊ¸¤Î¸Ä¿ô       -BM[0-100]   Ê¸Ëö¶ç¤Î³ä¹ç\n"
+		" -RC[0-10]     ¸ì¶ç¤Î½ÅÊ£¥Á¥§¥Ã¥¯     -KT\"Ê¸»úÎó\"  ¶çÅÀ\n"
+		" -SC[0-100]    ¼ç¸ì¤ò¾ÊÎ¬¤¹¤ë³ä¹ç     -TT\"Ê¸»úÎó\"  ÆÉÅÀ\n"
+		" -SH[0-100]    Éû»ì¶ç¤ò¾ÊÎ¬¤¹¤ë³ä¹ç\n");
+}
+
+
+void stop(char *p){
+	printf("%s\a\n",p);
+	/*
+	fcloseall();
+	*/
+	exit(1);
+}
+
+
+void prt(char *p,char _dtype){
+	switch(_dtype){
+	case 3:
+		break;
+	case 2:
+		printf("%s",p);
+	case 1:
+		if(EOF == fputs(p,fp)){
+			stop("\nError:¥Õ¥¡¥¤¥ë½ÐÎÏ¤¬¤¦¤Þ¤¯¤¤¤­¤Þ¤»¤óf");
+		}
+		break;
+	case 0:
+		printf("%s",p);
+		break;
+	}
+}
+
+
+void cprt(char *p,char _dtype){
+	switch(_dtype){
+	case 3:
+		break;
+	case 2:
+		printf("%s",p);
+	case 1:
+		if(EOF == fputs(p,fp)){
+			stop("\nError:¥Õ¥¡¥¤¥ë½ÐÎÏ¤¬¤¦¤Þ¤¯¤¤¤­¤Þ¤»¤óc");
+		}
+		break;
+	case 0:
+		printf("%s",p);
+		break;
+	}
+}
+
+
+double rand1(){
+	return( (double)(rand()%0x10000)/0x10000 );
+}
+
+
+int rand100(){
+	return((rand()%0x10000)%100);
+}
+
+
+int set_val(int a,int l,int h){
+	if(a<l){return(l);}
+	if(a>h){return(h);}
+	return(a);
+}
+
+
+char *strtail(char *p,int n){
+	static char tmp[256];
+	int a;
+
+	if(strlen(p)>255)return(NULL);
+
+	if(n>strlen(p)) n=strlen(p);
+	for(a=0;a<=n-1;a++){
+		tmp[a]=*(p+strlen(p)-n+a);
+	}
+	tmp[n]='\0';
+
+	return(tmp);
+}
+
+
+char *get_strval(char *p){
+	static char tmp[41];
+	int a=0,b=0;
+
+	if(strlen(p)>40) return(NULL);
+
+	for(a=0;a<=strlen(p);a++){
+		if(a>=strlen(p)) return(NULL);
+		if(*(p+a)=='\"') break;
+	}
+	a++;
+
+	for(;a<=strlen(p);a++){
+		tmp[b]=*(p+a);
+		if(a>=strlen(p)) return(NULL);
+		if(*(p+a)=='\"') break;
+		b++;
+	}
+
+	tmp[b]='\0';
+	return(tmp);
+}
+
+
+char *jstrrem(char *s,char *t){
+	char *p;
+	static char v[256]="";
+	if(strlen(s)>255){return(NULL);}
+	strcpy(v,p=jstrtok(s,t));
+	while((p=jstrtok(NULL,t))!=NULL){
+		strcat(v,p);
+	}
+	return(v);
+}
+
+
+void open_infile(){
+	if(chkinf==0){
+		printf("dict filename: ");
+		gets(infile);
+	}
+	if(infile[0]=='\0')  strcpy(infile,"nanba.nb1");
+	else if(strchr(infile,'.')==NULL)  strcat(infile,".nb1");
+	if((fp=fopen(infile,"r"))==NULL){
+		stop("\nError:Cannot Open Dict File.");
+	}
+	printf("\n");
+}
+
+
+void open_outfile(){
+	if(chkoutf==0){
+		printf("output filename: ");
+		gets(outfile);
+	}
+	if(outfile[0]=='\0') strcpy(outfile,"nanba.txt");
+	if((fp=fopen(outfile,"w"))==NULL){
+		stop("\nError:Cannot Create Output File.");
+	}
+}
+
+
+void read_data(){
+	int a=0;
+
+	wlow[0]=0;
+	wmax=0;
+
+	loop:
+	fgets(buf,240,fp);
+	if(strlen(buf)>200){buf[200]='\0';}
+
+	switch(buf[0]){
+	case'\n':
+	case'\'':
+		 goto loop;
+	case'-':
+	case'/':
+		get_opt2();
+		goto loop;
+	case'@':
+		whigh[a]=wmax-1;
+		a++;
+		if(a<=6){
+			wlow[a]=wmax;
+			goto loop;
+		}
+		else break;
+	case'\0':
+		stop("Error:¼­½ñ¥Õ¥¡¥¤¥ë¤Î¹àÌÜ¿ô¤¬Â­¤é¤Ê¤¤¤ß¤¿¤¤¤Ç¤¹");
+		exit(1);
+	default:
+		if((w[wmax]=(char *)malloc(strlen(buf)+1))==NULL){
+			stop("Error:¥á¥â¥ê¤¬Â­¤é¤Ê¤¤¤«, ¥Ç¡¼¥¿¤¬Âç¤­¤¹¤®¤ë¤è¤¦¤Ç¤¹");
+		}
+		buf[strlen(buf)-1]='\0';
+		strcpy(w[wmax],buf);
+		wmax++;
+		if(wmax>=WORDS_MAX){
+			stop("Error:¥Ç¡¼¥¿¤Î¸Ä¿ô¤¬Â¿¤¹¤®¤Þ¤¹");
+		}
+		goto loop;
+	}
+	fclose(fp);
+	/*
+	printf("%d¸Ä¤Î¸ì¶ç¤òÆÉ¤ß¹þ¤ß¤Þ¤·¤¿\n\n",wmax);
+	*/
+
+	for(a=0;a<=6;a++){
+		wnum[a]=whigh[a]-wlow[a]+1;
+		wcheck[a]=wnum[a]*rc/10;
+		if(wcheck[a]>255)wcheck[a]=255;
+	}
+}
+
+
+int get_opt1(int n,char **p){
+	int a;
+	char t[81];
+
+	for(a=1;a<=n-1;a++){
+		strncpy(t,*(p+a),80);
+		t[80]='\0';
+		if(t[0]=='-' || t[0]=='/'){
+
+			switch(t[1]){
+			/*--------------------------------------*/
+			case'n':	/* ²èÌÌÉ½¼¨¤òÍÞÀ© */
+			case'N':
+				if(strlen(t)>2)goto mukou;
+				if(chkfo!=0)goto mukou;
+				nf=1;
+				break;
+
+			/*--------------------------------------*/
+			case'v':
+			case'V':	/* ¥Õ¥¡¥¤¥ë½ÐÎÏ¤ò¤·¤Ê¤¤ */
+				if(strlen(t)>2)goto mukou;
+				if(nf==1)goto mukou;
+				if(strlen(outfile)!=0)goto mukou;
+				chkfo=1;
+				break;
+
+			/*--------------------------------------*/
+			case'i':	/* ÆþÎÏ¥Õ¥¡¥¤¥ëÌ¾¤Î»ØÄê */
+			case'I':
+				if(strlen(infile)>0)goto mukou;
+				if(strlen(t)>2){
+					strcpy(infile,strtail(t,strlen(t)-2));
+					chkinf=1;
+					break;
+				}
+				else if(a<n-1){
+					char _tmp[2];
+					strncpy(_tmp,*(p+a+1),1);
+					if(_tmp[0]!='-'){
+						strncpy(infile,*(p+a+1),80);
+						chkinf=1;
+						a++;
+						break;
+					}
+					else goto mukou;
+				}
+				else goto mukou;
+				break;
+
+			/*--------------------------------------*/
+			case'o':	/* ½ÐÎÏ¥Õ¥¡¥¤¥ëÌ¾¤Î»ØÄê */
+			case'O':
+				if(strlen(outfile)>0)goto mukou;
+				if(chkfo!=0)goto mukou;
+				if(strlen(t)>2){
+					strcpy(outfile,strtail(t,strlen(t)-2));
+					chkoutf=1;
+					break;
+				}
+				else if(a<n-1){
+					char _tmp[2];
+					strncpy(_tmp,*(p+a+1),1);
+					if(_tmp[0]!='-'){
+						strncpy(outfile,*(p+a+1),80);
+						chkoutf=1;
+						a++;
+						break;
+					}
+					else goto mukou;
+				}
+				else goto mukou;
+				break;
+
+			/*--------------------------------------*/
+			case's':	/* ½ÐÎÏ¤¹¤ëÃÊÍî¿ô */
+			case'S':
+				if(c_outs!=0)goto mukou;
+				if(strlen(t)>2){
+					char _tmp[80];
+					strcpy(_tmp,strtail(t,strlen(t)-2));
+					c_outs=set_val(atoi(_tmp),1,32000);
+					break;
+				}
+				else if(a<n-1){
+					char _tmp[80];
+					strncpy(_tmp,*(p+a+1),1);
+					if(_tmp[0]!='-' && _tmp[0]!='/'){
+						strncpy(_tmp,*(p+a+1),80);
+						c_outs=set_val(atoi(_tmp),1,32000);
+						a++;
+						break;
+					}
+					else goto mukou;
+				}
+				else goto mukou;
+				break;
+
+			/*--------------------------------------*/
+			case'h':	/* ¥Ø¥ë¥×É½¼¨ */
+			case'H':
+			case'?':
+				usage();
+				exit(0);
+
+			/*--------------------------------------*/
+			default:
+				goto mukou;
+			}/*switch*/
+
+		}/*if*/
+		else{
+			mukou:
+			printf("Warning:²¼µ­¥ª¥×¥·¥ç¥ó¤ÏÌµ¸ú¤Ç¤¹\n");
+			printf("%s\n\n",t);
+		}
+
+	}
+}
+
+
+void get_opt2(){
+	int c;
+	char _tmp[3];
+
+	if(strlen(buf)<3){goto mukou;}
+
+	_tmp[0]=tolower(buf[1]),_tmp[1]=tolower(buf[2]),_tmp[2]='\0';
+	c=atoi(&buf[3]);
+
+	if(strcmp(_tmp,"mn")==0 && c>=0){mn=set_val(c,1,100);return;}
+	else if(strcmp(_tmp,"mx")==0 && c>=0){mx=set_val(c,1,100);return;}
+	else if(strcmp(_tmp,"sn")==0 && c>=0){sn=set_val(c,1,32000);return;}
+	else if(strcmp(_tmp,"rc")==0 && c>=0){rc=set_val(c,0,10);return;}
+	else if(strcmp(_tmp,"bm")==0 && c>=0){bm=set_val(c,0,100);return;}
+	else if(strcmp(_tmp,"sc")==0 && c>=0){sc=set_val(c,0,100);return;}
+	else if(strcmp(_tmp,"sh")==0 && c>=0){sh=set_val(c,0,100);return;}
+	else if(strcmp(_tmp,"sz")==0 && c>=0){sz=set_val(c,0,100);return;}
+	else if(strcmp(_tmp,"jt")==0 && c>=0){jt=set_val(c,0,100);return;}
+	else if(strcmp(_tmp,"kt")==0){
+		char *s;
+		s=get_strval(buf);
+		if(s!=NULL){strcpy(kuten,s);return;}
+	}
+	else if(strcmp(_tmp,"tt")==0){
+		char *s;
+		s=get_strval(buf);
+		if(s!=NULL){strcpy(toten,s);return;}
+	}
+
+	mukou:
+		printf("Warning:²¼µ­¥ª¥×¥·¥ç¥ó¤ÏÌµ¸ú¤Ç¤¹(%s)\n",infile);
+		printf("%s\n",buf);
+}
+
+
+void sel(int wtype){
+	int a;
+	char sz_count=15,jt_count=15,fm_count=15;
+
+	strcpy(buf,tmp);
+
+	loop:
+	a=wlow[wtype]+wnum[wtype]*rand1();
+	if(count[a]>0) {
+		count[a]--;
+		goto loop;
+	}
+
+	/*--------------------------------------*/
+	/* Îã³°½èÍý */
+	if(strlen(w[a])>=4 && strcmp(strtail(buf,2),"¤¤")==0){
+		char _left[5];
+		strncpy(_left,w[a],4);
+		_left[4]='\0';
+
+		/* (·ÁÍÆ»ì+ãâÍâŠ¥¤ÏÉÔ²Ä) */
+		if(strcmp(_left,"¤Ù¤«")==0) goto loop;
+		if(strcmp(_left,"¤Ù¤­")==0) goto loop;
+		if(strcmp(_left,"¤Ù¤¯")==0) goto loop;
+		if(strcmp(_left,"¤Ù¤·")==0) goto loop;
+
+		/* (·ÁÍÆ»ì+ãâ‰âò¥¤ÏÉÔ²Ä) */
+		if(strcmp(_left,"¤·¤«")==0) goto loop;
+
+		/* (·ÁÍÆ»ì+ãâ™âÞ¥¤ÏÉÔ²Ä) */
+		if(strcmp(_left,"¤¿¤á")==0) goto loop;
+
+		/* (·ÁÍÆ»ì+ãâ±âº¥¤ÏÉÔ²Ä) */
+		if(strcmp(_left,"¤Ë¤Ï")==0) goto loop;
+
+		/* (·ÁÍÆ»ì+ãâ×âª¥¤ÏÉÔ²Ä) */
+		if(strcmp(_left,"¤Þ¤Ç")==0) goto loop;
+
+	}
+
+	/*--------------------------------------*/
+	/* ÀÜÂ³½õ»ì¤Î½ÅÊ£¥Á¥§¥Ã¥¯ */
+	if(sz_count>0 && wtype==5){
+		char _tmp[256];
+		strcpy(_tmp,w[a]);
+		strcpy(_tmp,jstrrem(_tmp,toten));
+		strcpy(_tmp,jstrrem(_tmp,KUGIRI));
+		strcpy(_tmp,strtail(_tmp,4));
+		if(strcmp(_tmp,sz_b)==0){
+			sz_count--;
+			goto loop;
+		}
+		strcpy(sz_b,_tmp);
+	}
+
+	/*--------------------------------------*/
+	/* Ê¸Ëö¶ç¤Î½Ò¸ì¸ìÈø¤Î½ÅÊ£¥Á¥§¥Ã¥¯ */
+	if(jt_count>0 && wtype==6){
+		int c;
+		char _tmp[5];
+		strcpy(_tmp,strtail(w[a],4));
+		if(strcmp(_tmp,bm_b)==0){
+			jt_count--;
+			goto loop;
+		}
+		for(c=0;c<=2;c++){
+			if(strcmp(_tmp,jt_b[c])==0){
+				jt_count--;
+				goto loop;
+			}
+		}
+		strcpy(bm_b,_tmp);
+	}
+
+	if(wtype==3 || wtype==4){
+		int c;
+		for(c=0;c<=1;c++){strcpy(jt_b[c],jt_b[c+1]);}
+		strcpy(jt_b[2],strtail(w[a],4));
+	}
+
+	/*--------------------------------------*/
+	/* Ä¾Á°¤Î¸ì¶ç¤È¤ÎÈæ³Ó¤Ë¤è¤ë½ÅÊ£¥Á¥§¥Ã¥¯ */
+	if(fm_count>0){
+		if(jstrstr(buf,"¤Ç¤¢")!=NULL && jstrstr(w[a],"¤Ç¤¢")!=NULL){
+			fm_count--; goto loop;}
+
+		if(jstrstr(buf,"¤µ¤ì")!=NULL && jstrstr(w[a],"¤µ¤ì")!=NULL){
+			fm_count--; goto loop;}
+
+		if(jstrstr(buf,"¤È¤¤")!=NULL && jstrstr(w[a],"¤È¤¤")!=NULL){
+			fm_count--; goto loop;}
+
+		if(jstrstr(buf,"¤È¸À")!=NULL && jstrstr(w[a],"¤È¸À")!=NULL){
+			fm_count--; goto loop;}
+
+		if(jstrstr(buf,"¤Ç¤­")!=NULL && jstrstr(w[a],"¤Ç¤­")!=NULL){
+			fm_count--; goto loop;}
+
+		if(jstrstr(buf,"¤â¤Î")!=NULL && jstrstr(w[a],"¤â¤Î")!=NULL){
+			fm_count--; goto loop;}
+	}
+
+	/*--------------------------------------*/
+
+	strcpy(tmp,w[a]);
+	count[a]=wcheck[wtype];
+
+}
+
+
+void inflect(){
+	int f=0;
+	char _left[256],_right[21];
+
+	if(strlen(tmp)>6){
+		strcpy(_left,tmp);
+		_left[strlen(tmp)-6]='\0';
+		strcpy(_right,strtail(tmp,6));
+
+		if(strcmp(_right,"¤·¤Ê¤¤")==0) strcat(_left,"¤»¤º"),f=1;
+		else if(strcmp(_right,"¤Ï¤Ê¤¤")==0) strcat(_left,"¤Ï¤Ê¤¯"),f=1;
+		else if(strcmp(_right,"¤¬¤Ê¤¤")==0) strcat(_left,"¤¬¤Ê¤¯"),f=1;
+		else if(strcmp(_right,"¤Ë¤Ê¤¤")==0) strcat(_left,"¤Ë¤Ê¤¯"),f=1;
+		else if(strcmp(_right,"¤Æ¤¤¤ë")==0) strcat(_left,"¤Æ¤ª¤ê"),f=1;
+		else if(strcmp(_right,"¤Ç¤¤¤ë")==0) strcat(_left,"¤Ç¤ª¤ê"),f=1;
+	}
+
+	if(f==0 && strlen(tmp)>4){
+		strcpy(_left,tmp);
+		_left[strlen(tmp)-4]='\0';
+		strcpy(_right,strtail(tmp,4));
+
+		if(strcmp(_right,"¤¹¤ë")==0) strcat(_left,"¤·"),f=1;
+		else if(strcmp(_right,"¤º¤ë")==0) strcat(_left,"¤¸"),f=1;
+		else if(strcmp(_right,"¤¢¤ë")==0) strcat(_left,"¤¢¤ê"),f=1;
+		else if(strcmp(_right,"¤¨¤ë")==0) strcat(_left,"¤¨"),f=1;
+		else if(strcmp(_right,"¤²¤ë")==0) strcat(_left,"¤²"),f=1;
+		else if(strcmp(_right,"¤¼¤ë")==0) strcat(_left,"¤¼"),f=1;
+		else if(strcmp(_right,"¤á¤ë")==0) strcat(_left,"¤á"),f=1;
+		else if(strcmp(_right,"¤ì¤ë")==0) strcat(_left,"¤ì"),f=1;
+		else if(strcmp(_right,"¸À¤¦")==0) strcat(_left,"¸À¤¤"),f=1;
+		else if(strcmp(_right,"¤¤¤¦")==0) strcat(_left,"¤¤¤¤"),f=1;
+		else if(strcmp(_right,"Æþ¤ë")==0) strcat(_left,"Æþ¤ê"),f=1;
+		else if(strcmp(_right,"¸«¤ë")==0) strcat(_left,"¸«¤Æ"),f=1;
+		else if(strcmp(_right,"½Ð¤ë")==0) strcat(_left,"½Ð¤Æ"),f=1;
+		else if(strcmp(_right,"ÆÀ¤ë")==0) strcat(_left,"ÆÀ¤Æ"),f=1;
+		else if(strcmp(_right,"¤·¤¤")==0) strcat(_left,"¤·¤¯"),f=1;
+		else if(strcmp(_right,"¤¢¤¦")==0) strcat(_left,"¤¢¤¤"),f=1;
+		else if(strcmp(_right,"¹ç¤¦")==0) strcat(_left,"¹ç¤¤"),f=1;
+	}
+
+	if(f==0 && strlen(tmp)>2){
+		strcpy(_left,tmp);
+		_left[strlen(tmp)-2]='\0';
+		strcpy(_right,strtail(tmp,2));
+
+		if(strcmp(_right,"¤À")==0) strcat(_left,"¤Ç"),f=1;
+		else if(strcmp(_right,"¤¯")==0) strcat(_left,"¤­"),f=1;
+		else if(strcmp(_right,"¤Ä")==0) strcat(_left,"¤Á"),f=1;
+		else if(strcmp(_right,"¤à")==0) strcat(_left,"¤ß"),f=1;
+		else if(strcmp(_right,"¤°")==0) strcat(_left,"¤®"),f=1;
+		else if(strcmp(_right,"¤Ö")==0) strcat(_left,"¤Ó"),f=1;
+	}
+	
+	if(f==1) strcpy(tmp,_left);
+	else strcat(tmp,"¤·");
+
+	strcat(tmp,toten);
+}
+
+
+/* ÆÉ¤ß¤Ë¤¯¤¤¥Õ¥¡¥¤¥ë¤Ç¿½¤·Ìõ¤¢¤ê¤Þ¤»¤ó(^^;)¡£¤Á¤Ê¤ß¤Ë¤³¤Î¥½¥Õ¥È¤Î
+   ºî¼Ô¤Ï¤¹¤Ç¤Ë£Ã¸À¸ì¤Î»È¤¤Êý¤ò¤Û¤È¤ó¤ÉËº¤ì¤Æ¤·¤Þ¤Ã¤¿¤Î¤Ç¡¢µ»½ÑÅª¤Ê
+   ÌÌ¤Ë¤Ä¤¤¤Æ¤Î¤´°Õ¸«¤´Í×Ë¾¤Ë¤Ï¤ªÅú¤¨¤Ç¤­¤Þ¤»¤ó(^^;)               */
+
