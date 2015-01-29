@@ -552,6 +552,7 @@ int get_opt1(int n,char **p){
 		}
 
 	}
+	return 0; 
 }
 
 
