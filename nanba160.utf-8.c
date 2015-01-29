@@ -22,6 +22,9 @@
 #define KUGIRI " !?:;.,^~_/<>()[]{}\'\"\t\n　！？：；．，。、・\
 …‥＾‾＿／＜＞（）［］「」〔〕｛｝〈〉《》『』【】“”‘’"
 
+/* max file name size + 2 */
+#define FNAME_SIZE_MAX 257
+
 void title_a();
 void title_b();
 void usage();
@@ -60,7 +63,7 @@ int c_outs=0;	/* 出力する段落数(0=無限,or 1-32000) */
 char *w[WORDS_MAX],buf[256],tmp[256];
 char sz_b[5]; /* 接続助詞の重複チェック用 */
 char jt_b[3][5],bm_b[5]; /* 文末句の述語語尾の重複チェック用 */
-char infile[81]="",outfile[81]="";
+char infile[FNAME_SIZE_MAX]="",outfile[FNAME_SIZE_MAX]="";
 unsigned char count[WORDS_MAX];
 int wlow[8],whigh[8],wnum[8],wcheck[8],wmax;
 
@@ -352,7 +355,8 @@ char *jstrrem(char *s,char *t){
 void open_infile(){
 	if(chkinf==0){
 		printf("dict filename: ");
-		gets(infile);
+		fgets(infile, FNAME_SIZE_MAX, stdin);
+		infile[strlen(infile)-1] = '\0';
 	}
 	if(infile[0]=='\0')  strcpy(infile,"nanba.nb1");
 	else if(strchr(infile,'.')==NULL)  strcat(infile,".nb1");
@@ -366,7 +370,8 @@ void open_infile(){
 void open_outfile(){
 	if(chkoutf==0){
 		printf("output filename: ");
-		gets(outfile);
+		fgets(outfile, FNAME_SIZE_MAX, stdin);
+		outfile[strlen(outfile)-1] = '\0';
 	}
 	if(outfile[0]=='\0') strcpy(outfile,"nanba.txt");
 	if((fp=fopen(outfile,"w"))==NULL){
