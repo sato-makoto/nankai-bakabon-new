@@ -76,7 +76,7 @@ FILE *fp;
 
 
 
-main(int argc,char **argv)
+int main(int argc,char **argv)
 {
 	int a,slen,st;
 	int chp=0; /* 段落分け用 */
