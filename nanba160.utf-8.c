@@ -3,7 +3,7 @@
      <<nanba160.c>>
   
      Originally, written by BXA00031 at Nifty Serve
-       for MS-DOS(LSI-C) in before 1994?
+       for MS-DOS(LSI-C) in 1994/4/3
      for UNIX(gcc)  modified by T.AIBA 1996/02/15
      for UTF-8      modified by Sato Makoto 2012/07/01
          just nkf -w , and some comments.
