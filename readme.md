@@ -1,4 +1,5 @@
-# nankai bakabon (難解バカボン)
+# Nankai bakabon (難解バカボン)
+Supporting Unix-ported MS-DOS Program [Nankai bakabon](http://www.vector.co.jp/soft/dos/amuse/se007728.html)) project.
 
 * original auther: [難解計画](http://www.vector.co.jp/vpack/browse/person/an003117.html)
 * unix porting: [T.Aiba](http://ayiva.sakura.ne.jp/misc/Y199/nanbas/nanba-setup-c.txt)
