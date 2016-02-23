@@ -301,23 +301,23 @@ int set_val(int a,int l,int h){
 
 
 char *strtail(char *p,int n){
-	static char tmp[256];
+	static char ltmp[256];
 	int a;
 
 	if(strlen(p)>255)return(NULL);
 
 	if(n>strlen(p)) n=strlen(p);
 	for(a=0;a<=n-1;a++){
-		tmp[a]=*(p+strlen(p)-n+a);
+		ltmp[a]=*(p+strlen(p)-n+a);
 	}
-	tmp[n]='\0';
+	ltmp[n]='\0';
 
-	return(tmp);
+	return(ltmp);
 }
 
 
 char *get_strval(char *p){
-	static char tmp[41];
+	static char ltmp[41];
 	int a=0,b=0;
 
 	if(strlen(p)>40) return(NULL);
@@ -329,14 +329,14 @@ char *get_strval(char *p){
 	a++;
 
 	for(;a<=strlen(p);a++){
-		tmp[b]=*(p+a);
+		ltmp[b]=*(p+a);
 		if(a>=strlen(p)) return(NULL);
 		if(*(p+a)=='\"') break;
 		b++;
 	}
 
-	tmp[b]='\0';
-	return(tmp);
+	ltmp[b]='\0';
+	return(ltmp);
 }
 
 
