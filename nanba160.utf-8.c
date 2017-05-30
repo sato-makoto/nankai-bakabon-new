@@ -14,6 +14,8 @@
 #include <ctype.h>
 #include <string.h>
 
+#include <math.h>
+
 #include "jstring.c"
 #include <time.h>
 
@@ -107,7 +109,7 @@ int main(int argc,char **argv)
 
 mainloop:
 
-	slen=abs(mn+rand1()*(mx-mn+1));  /* 一文の長さ */
+	slen=fabs(mn+rand1()*(mx-mn+1));  /* 一文の長さ */
 	if(slen<1)slen=1;
 	st=1;  /* '文の先頭'を示す */
 
