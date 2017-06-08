@@ -7,5 +7,9 @@ Supporting Unix-ported MS-DOS Program [Nankai bakabon](http://www.vector.co.jp/s
 * UTF-8 porting: [Sato Makoto](http://www.kuzuore.com/)
 * jstring.c: T.Aiba
 
+## todo
+* rewright more modern C program.
+* lessen warnings of C compilers.
+
 ## links
 * original [archives](http://www.vector.co.jp/vpack/filearea/dos/amuse/joke/bakabon/): original program, dics, etc.
