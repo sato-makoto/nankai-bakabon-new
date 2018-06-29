@@ -200,12 +200,12 @@ mainloop:
 }
 
 void port_cre(){
-        printf("\n");
-	printf(" Originally, written by BXA00031 at Nifty Serve\n");
-	printf("   for MS-DOS(LSI-C) in 1994/4/3\n");
-	printf("   for UNIX(gcc)  modified by T.AIBA 1996/02/15\n");
-	printf("   for UTF-8      modified by Sato Makoto 2012/07/01\n");
-	printf("     just nkf -w , and some comments.\n");
+        printf("\n"
+	" Originally, written by BXA00031 at Nifty Serve\n"
+	"   for MS-DOS(LSI-C) in 1994/4/3\n"
+	"   for UNIX(gcc)  modified by T.AIBA 1996/02/15\n"
+	"   for UTF-8      modified by Sato Makoto 2012/07/01\n"
+	"     just nkf -w , and some comments.\n");
 }
 
 void title_a(){
