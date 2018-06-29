@@ -27,6 +27,7 @@
 /* max file name size + 2 */
 #define FNAME_SIZE_MAX 257
 
+void port_cre();
 void title_a();
 void title_b();
 void usage();
@@ -88,9 +89,7 @@ int main(int argc,char **argv)
 	printf("\33[2J");
 	*/
 	dtype=0;
-	/*
 	title_a();
-	*/
 
 	if(argc>1){get_opt1(argc,argv);}
 
@@ -99,10 +98,8 @@ int main(int argc,char **argv)
 	if(chkfo==0){
 		open_outfile();
 		dtype=1;
-		/*
 		title_b();
 		prt("辞書ファイル名:",dtype); prt(infile,dtype); prt("\n\n",dtype);
-		*/
 	}
 
 	if(nf==0 && chkfo==0) dtype=2;
@@ -202,13 +199,22 @@ mainloop:
 		exit(0);
 }
 
+void port_cre(){
+        printf("\n");
+	printf(" Originally, written by BXA00031 at Nifty Serve\n");
+	printf("   for MS-DOS(LSI-C) in 1994/4/3\n");
+	printf("   for UNIX(gcc)  modified by T.AIBA 1996/02/15\n");
+	printf("   for UTF-8      modified by Sato Makoto 2012/07/01\n");
+	printf("     just nkf -w , and some comments.\n");
+}
 
 void title_a(){
 	int a;
-	for(a=1;a<=23;a++) prt("〜",dtype);
+	for(a=1;a<=28;a++) prt("〜",dtype);
 	prt("\n",dtype);
 	prt("　　自動作文ソフト『難解バカボン』Ver.1.60    \n",dtype);
-	for(a=1;a<=23;a++) prt("〜",dtype);
+	port_cre();
+	for(a=1;a<=28;a++) prt("〜",dtype);
 	prt("\n",dtype);
 }
 
